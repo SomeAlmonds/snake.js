@@ -12,7 +12,7 @@ context.fillStyle = "white";
 context.strokeStyle = "white";
 context.lineWidth = 2;
 
-let state = {
+let snake = {
   sections: [
     {
       x: height / 2,
@@ -20,15 +20,15 @@ let state = {
     },
     {
       x: height / 2,
-      y:( width / 2) + 20,
+      y: width / 2 + 20,
     },
     {
       x: height / 2,
-      y: (width / 2) + 40,
+      y: width / 2 + 40,
     },
     {
       x: height / 2,
-      y: (width / 2) + 60,
+      y: width / 2 + 60,
     },
   ],
   step: height / 20,
@@ -43,6 +43,24 @@ let state = {
   },
 };
 
+let foodGrid = Array.from({ length: 20 }, (_, i) => i * snake.step);
+function newPossition(c) {
+  let p = foodGrid[Math.floor(Math.random() * 20)];
+
+  snake.sections.forEach((section) => {
+    if (Array.from({ length: 30 }, (_, i) => i - 10 + section[c]).includes(p)) {
+      newPossition(c);
+    }
+  });
+  return p;
+}
+let food = {
+  possition: {
+    x: newPossition("x"),
+    y: newPossition("y"),
+  },
+};
+
 let keyMap = {
   87: "up",
   83: "down",
@@ -53,71 +71,92 @@ let keyMap = {
 
 function keyDown(e) {
   let key = keyMap[e.keyCode];
-  state.pressedKeys[key] = true;
+  snake.pressedKeys[key] = true;
 }
 
 function keyUp(e) {
   let key = keyMap[e.keyCode];
-  state.pressedKeys[key] = false;
+  snake.pressedKeys[key] = false;
 }
 
 window.addEventListener("keydown", keyDown);
 window.addEventListener("keyup", keyUp);
 
 function updateRotation() {
-  state.lastRotation = state.rotation;
-  if (state.pressedKeys.up) {
-    if (state.lastRotation !== 180) state.rotation = 0;
+  snake.lastRotation = snake.rotation;
+  if (snake.pressedKeys.up) {
+    if (snake.lastRotation !== 180) snake.rotation = 0;
   }
-  if (state.pressedKeys.right) {
-    if (state.lastRotation !== 270) state.rotation = 90;
-    console.log(state.rotation);
+  if (snake.pressedKeys.right) {
+    if (snake.lastRotation !== 270) snake.rotation = 90;
+    console.log(snake.rotation);
   }
-  if (state.pressedKeys.down) {
-    if (state.lastRotation !== 0) state.rotation = 180;
+  if (snake.pressedKeys.down) {
+    if (snake.lastRotation !== 0) snake.rotation = 180;
   }
-  if (state.pressedKeys.left) {
-    if (state.lastRotation !== 90) state.rotation = 270;
-    console.log(state.rotation);
+  if (snake.pressedKeys.left) {
+    if (snake.lastRotation !== 90) snake.rotation = 270;
+    console.log(snake.rotation);
   }
 }
 
 function updatePossition() {
-  let sectionslen = state.sections.length;
+  let sectionslen = snake.sections.length;
 
   for (let i = 0; i <= sectionslen - 2; i++) {
-    state.sections[sectionslen - 1 - i].x =
-      state.sections[sectionslen - 2 - i].x;
-    state.sections[sectionslen - 1 - i].y =
-      state.sections[sectionslen - 2 - i].y;
+    snake.sections[sectionslen - 1 - i].x =
+      snake.sections[sectionslen - 2 - i].x;
+    snake.sections[sectionslen - 1 - i].y =
+      snake.sections[sectionslen - 2 - i].y;
   }
 
-  switch (state.rotation) {
+  switch (snake.rotation) {
     case 0:
-      state.sections[0].y -= state.step;
+      snake.sections[0].y -= snake.step;
       break;
     case 90:
-      state.sections[0].x += state.step;
+      snake.sections[0].x += snake.step;
       break;
     case 180:
-      state.sections[0].y += state.step;
+      snake.sections[0].y += snake.step;
       break;
     case 270:
-      state.sections[0].x -= state.step;
+      snake.sections[0].x -= snake.step;
       break;
     default:
       break;
   }
 
-  if (state.sections[0].x > width) {
-    state.sections[0].x -= width;
-  } else if (state.sections[0].x < 0) {
-    state.sections[0].x += width;
+  if (snake.sections[0].x > width) {
+    snake.sections[0].x -= width;
+  } else if (snake.sections[0].x < 0) {
+    snake.sections[0].x += width;
   }
-  if (state.sections[0].y > height) {
-    state.sections[0].y -= height;
-  } else if (state.sections[0].y < 0) {
-    state.sections[0].y += height;
+  if (snake.sections[0].y > height) {
+    snake.sections[0].y -= height;
+  } else if (snake.sections[0].y < 0) {
+    snake.sections[0].y += height;
+  }
+}
+
+function collision() {
+  console.log(food.possition.x);
+
+  if (
+    Array.from({ length: 20 }, (_, i) => i + snake.sections[0].x).includes(
+      food.possition.x + 5
+    ) &&
+    Array.from({ length: 20 }, (_, i) => i + snake.sections[0].y).includes(
+      food.possition.y + 5
+    )
+  ) {
+    food.possition.x = newPossition("x");
+    food.possition.x = newPossition("y");
+    snake.sections.unshift({
+      x: snake.sections[0].x,
+      y: snake.sections[0].y,
+    });
+    console.log("hit");
   }
 }
 
@@ -125,9 +164,11 @@ function draw() {
   context.clearRect(0, 0, width, height);
   context.save();
 
-  state.sections.forEach((section) => {
-    context.fillRect(section.x, section.y, 20, 20)
-  })
+  snake.sections.forEach((section) => {
+    context.fillRect(section.x, section.y, 20, 20);
+  });
+
+  context.fillRect(food.possition.x, food.possition.y, 10, 10);
 
   context.restore();
 }
@@ -141,6 +182,7 @@ function loop() {
   updateRotation(progress);
   if (progress >= fpsInt) {
     updatePossition(progress);
+    collision();
     draw();
     lastRender = performance.now();
   }
