@@ -1,102 +1,90 @@
+///////////////////////////// CANVAS SETUP /////////////////////////////
+
 const canvas = document.createElement("canvas");
 canvas.id = "canvas";
 canvas.className = "canvas";
 const canvasDiv = document.getElementById("canvas-div");
 canvasDiv.appendChild(canvas);
 
-const height = (canvas.height = 500);
-const width = (canvas.width = 500);
+const height = (canvas.height = 400);
+const width = (canvas.width = 400);
 
 const context = canvas.getContext("2d");
 context.fillStyle = "white";
 context.strokeStyle = "white";
 context.lineWidth = 2;
 
-let snake = {
-  sections: [
-    {
-      x: height / 2,
-      y: width / 2,
-    },
-    {
-      x: height / 2,
-      y: width / 2 + 20,
-    },
-    {
-      x: height / 2,
-      y: width / 2 + 40,
-    },
-    {
-      x: height / 2,
-      y: width / 2 + 60,
-    },
-  ],
-  step: height / 20,
-  rotation: 0,
-  lastRotation: 0,
-  pressedKeys: {
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-    space: false,
-  },
-};
+///////////////////////////// SNAKE AND TARGET SETUP /////////////////////////////
 
-let foodGrid = Array.from({ length: 20 }, (_, i) => i * snake.step);
-function newPossition(c) {
-  let p = foodGrid[Math.floor(Math.random() * 20)];
+class SNAKE {
+  constructor() {
+    this.sections = [
+      {
+        x: height / 2,
+        y: width / 2,
+      },
+      {
+        x: height / 2,
+        y: width / 2 + 20,
+      },
+    ];
+    this.step = height / 20;
+    this.rotation = 0;
+    this.lastRotation = 0;
+  }
+}
+let snake = new SNAKE();
 
-  snake.sections.forEach((section) => {
-    if (Array.from({ length: 30 }, (_, i) => i - 10 + section[c]).includes(p)) {
-      newPossition(c);
+class FOOD {
+  constructor() {
+    this.foodGrid = Array.from({ length: 20 }, (_, i) => 5 + i * snake.step);
+    this.possition = { x: this.newPossition("x"), y: this.newPossition("y") };
+  }
+  newPossition(axis) {
+    let p = this.foodGrid[Math.floor(Math.random() * 20)];
+
+    if (axis === "y") {
+      snake.sections.forEach((section) => {
+        if (
+          Array.from({ length: 20 }, (_, i) => i + section.y).includes(p) &&
+          Array.from({ length: 20 }, (_, i) => i + section.x).includes(
+            this.possition.x
+          )
+        ) {
+          newPossition(axis);
+        }
+      });
     }
-  });
-  return p;
-}
-let food = {
-  possition: {
-    x: newPossition("x"),
-    y: newPossition("y"),
-  },
-};
-
-let keyMap = {
-  87: "up",
-  83: "down",
-  65: "left",
-  68: "right",
-  19: "space",
-};
-
-function keyDown(e) {
-  let key = keyMap[e.keyCode];
-  snake.pressedKeys[key] = true;
+    return p;
+  }
 }
 
-function keyUp(e) {
-  let key = keyMap[e.keyCode];
-  snake.pressedKeys[key] = false;
-}
+let food = new FOOD();
 
-window.addEventListener("keydown", keyDown);
-window.addEventListener("keyup", keyUp);
+///////////////////////////// INPUT HANDLING /////////////////////////////
 
-function updateRotation() {
+window.addEventListener("keydown", (e) => updateRotation(e.key));
+
+///////////////////////////// SNAKE POSITION HANDLING /////////////////////////////
+
+function updateRotation(direction) {
   snake.lastRotation = snake.rotation;
-  if (snake.pressedKeys.up) {
-    if (snake.lastRotation !== 180) snake.rotation = 0;
-  }
-  if (snake.pressedKeys.right) {
-    if (snake.lastRotation !== 270) snake.rotation = 90;
-    console.log(snake.rotation);
-  }
-  if (snake.pressedKeys.down) {
-    if (snake.lastRotation !== 0) snake.rotation = 180;
-  }
-  if (snake.pressedKeys.left) {
-    if (snake.lastRotation !== 90) snake.rotation = 270;
-    console.log(snake.rotation);
+
+  switch (direction) {
+    case "w" || "W":
+      if (snake.lastRotation !== 180) snake.rotation = 0;
+      break;
+    case "d" || "D":
+      if (snake.lastRotation !== 270) snake.rotation = 90;
+      break;
+    case "s" || "S":
+      if (snake.lastRotation !== 0) snake.rotation = 180;
+      break;
+    case "a" || "A":
+      if (snake.lastRotation !== 90) snake.rotation = 270;
+      break;
+    default:
+      break;
   }
 }
 
@@ -127,21 +115,24 @@ function updatePossition() {
       break;
   }
 
-  if (snake.sections[0].x > width) {
-    snake.sections[0].x -= width;
-  } else if (snake.sections[0].x < 0) {
-    snake.sections[0].x += width;
-  }
-  if (snake.sections[0].y > height) {
-    snake.sections[0].y -= height;
-  } else if (snake.sections[0].y < 0) {
-    snake.sections[0].y += height;
+  if (!hardMode) {
+    if (snake.sections[0].x >= width) {
+      snake.sections[0].x = 0;
+    } else if (snake.sections[0].x < 0) {
+      snake.sections[0].x += width;
+    }
+    if (snake.sections[0].y >= height) {
+      snake.sections[0].y = 0;
+    } else if (snake.sections[0].y < 0) {
+      snake.sections[0].y += height;
+    }
   }
 }
 
-function collision() {
-  console.log(food.possition.x);
+///////////////////////////// COLLISION DETECTION /////////////////////////////
 
+function collision() {
+  // FOOD COLLISION
   if (
     Array.from({ length: 20 }, (_, i) => i + snake.sections[0].x).includes(
       food.possition.x + 5
@@ -150,15 +141,43 @@ function collision() {
       food.possition.y + 5
     )
   ) {
-    food.possition.x = newPossition("x");
-    food.possition.x = newPossition("y");
-    snake.sections.unshift({
-      x: snake.sections[0].x,
-      y: snake.sections[0].y,
+    // new target
+    food.possition.x = food.newPossition("x");
+    food.possition.y = food.newPossition("y");
+
+    // increase snake length
+    snake.sections.push({
+      x: snake.sections[snake.sections.length - 1].x,
+      y: snake.sections[snake.sections.length - 1].y,
     });
-    console.log("hit");
+
+    // update score
+    score += 10;
+    document.getElementById("score-counter").innerText = `SCORE: ${score}`;
+  }
+
+  // SELF COLLISION
+  snake.sections.slice(1).forEach((section) => {
+    if (
+      section.x === snake.sections[0].x &&
+      section.y === snake.sections[0].y
+    ) {
+      gameOver = 1;
+    }
+  });
+
+  // WALL COLLISION
+  if (hardMode) {
+    if (snake.sections[0].x >= width || snake.sections[0].x < 0) {
+      gameOver = 1;
+    }
+    if (snake.sections[0].y >= height || snake.sections[0].y < 0) {
+      gameOver = 1;
+    }
   }
 }
+
+///////////////////////////// SCREEN UPDATE /////////////////////////////
 
 function draw() {
   context.clearRect(0, 0, width, height);
@@ -173,28 +192,53 @@ function draw() {
   context.restore();
 }
 
-let breakLoop = true;
+///////////////////////////// MAIN LOOP /////////////////////////////
+
+let pauseLoop = true;
 let lastRender = 0;
-let fpsInt = 1000 / 3;
+let fpsInt = 1000 / 4;
+let score = 0;
+let scoreList = [];
+let hardMode = 0;
+let gameOver = 0;
+
 function loop() {
   let progress = performance.now() - lastRender;
 
-  updateRotation(progress);
   if (progress >= fpsInt) {
-    updatePossition(progress);
+    if (gameOver) {
+      // update score list
+      scoreList.push(score);
+      scoreList.sort((a, b) => b - a);
+      score = 0;
+      snake = new SNAKE();
+      console.log(snake.sections[0].x);
+      document.getElementById("start-btn").innerText = "START";
+
+      return;
+    }
+    updatePossition();
     collision();
     draw();
     lastRender = performance.now();
   }
-  if (!breakLoop) window.requestAnimationFrame(loop);
+  if (!pauseLoop) window.requestAnimationFrame(loop);
   else {
-    context.clearRect(0, 0, width, height);
     return;
   }
 }
 
 document.getElementById("start-btn").addEventListener("click", () => {
-  breakLoop = !breakLoop;
-  document.getElementById("start-btn").innerText = breakLoop ? "START" : "STOP";
-  loop();
+  pauseLoop = !pauseLoop;
+  document.getElementById("start-btn").innerText = pauseLoop
+    ? "START"
+    : "PAUSE";
+  if (!pauseLoop) loop();
+});
+
+document.getElementById("mode-btn").addEventListener("click", () => {
+  hardMode = !hardMode;
+  document.getElementById("mode-btn").innerText = hardMode
+    ? "MODE: HARD"
+    : "MODE: EASY";
 });
