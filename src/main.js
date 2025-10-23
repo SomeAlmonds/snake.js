@@ -212,7 +212,6 @@ function handleGameOver() {
     list[i].innerText = scoreList[i] || 0;
   }
   window.localStorage.setItem("snake-score-list", [...scoreList]);
-  console.log(window.localStorage.getItem("snake-score-list"));
 
   score = 0;
 
@@ -228,8 +227,9 @@ let pauseLoop = true;
 let lastRender = 0;
 let fpsInt = 1000 / 4;
 let score = 0;
-let scoreList =
-  window.localStorage.getItem("snake-score-list").split(",") || [];
+let scoreList = [];
+if (window.localStorage.getItem("snake-score-list"))
+  scoreList = window.localStorage.getItem("snake-score-list").split(",");
 let hardMode = 0;
 let gameOver = 0;
 
