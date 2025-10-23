@@ -14,6 +14,14 @@ context.fillStyle = "white";
 context.strokeStyle = "white";
 context.lineWidth = 2;
 
+if (window.localStorage.getItem("snake-score-list")) {
+  let list = document.getElementsByClassName("score-item");
+  for (let i = 0; i < list.length; i++) {
+    list[i].innerText =
+      window.localStorage.getItem("snake-score-list").split(",")[i] || 0;
+  }
+}
+
 ///////////////////////////// SNAKE AND TARGET SETUP /////////////////////////////
 
 class SNAKE {
@@ -51,7 +59,8 @@ class FOOD {
             this.possition.x
           )
         ) {
-          newPossition(axis);
+          this.possition.x = this.foodGrid[Math.floor(Math.random() * 20)];
+          this.newPossition(axis);
         }
       });
     }
@@ -192,13 +201,35 @@ function draw() {
   context.restore();
 }
 
+///////////////////////////// HANDLE GAME OVER /////////////////////////////
+
+function handleGameOver() {
+  scoreList.push(score);
+  scoreList.sort((a, b) => b - a);
+
+  let list = document.getElementsByClassName("score-item");
+  for (let i = 0; i < list.length; i++) {
+    list[i].innerText = scoreList[i] || 0;
+  }
+  window.localStorage.setItem("snake-score-list", [...scoreList]);
+  console.log(window.localStorage.getItem("snake-score-list"));
+
+  score = 0;
+
+  snake = new SNAKE();
+  food = new FOOD();
+  pauseLoop = true;
+  document.getElementById("start-btn").innerText = "START";
+}
+
 ///////////////////////////// MAIN LOOP /////////////////////////////
 
 let pauseLoop = true;
 let lastRender = 0;
 let fpsInt = 1000 / 4;
 let score = 0;
-let scoreList = [];
+let scoreList =
+  window.localStorage.getItem("snake-score-list").split(",") || [];
 let hardMode = 0;
 let gameOver = 0;
 
@@ -207,14 +238,8 @@ function loop() {
 
   if (progress >= fpsInt) {
     if (gameOver) {
-      // update score list
-      scoreList.push(score);
-      scoreList.sort((a, b) => b - a);
-      score = 0;
-      snake = new SNAKE();
-      console.log(snake.sections[0].x);
-      document.getElementById("start-btn").innerText = "START";
-
+      // update score list and reset
+      handleGameOver();
       return;
     }
     updatePossition();
@@ -229,6 +254,12 @@ function loop() {
 }
 
 document.getElementById("start-btn").addEventListener("click", () => {
+  // reset score element when starting a new game
+  if (gameOver) {
+    document.getElementById("score-counter").innerText = `SCORE: ${score}`;
+    gameOver = 0;
+  }
+  // if game is paused: resume else: pause
   pauseLoop = !pauseLoop;
   document.getElementById("start-btn").innerText = pauseLoop
     ? "START"
@@ -237,6 +268,7 @@ document.getElementById("start-btn").addEventListener("click", () => {
 });
 
 document.getElementById("mode-btn").addEventListener("click", () => {
+  // toggle difficulty mode
   hardMode = !hardMode;
   document.getElementById("mode-btn").innerText = hardMode
     ? "MODE: HARD"
