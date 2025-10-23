@@ -56,7 +56,7 @@ class FOOD {
         if (
           Array.from({ length: 20 }, (_, i) => i + section.y).includes(p) &&
           Array.from({ length: 20 }, (_, i) => i + section.x).includes(
-            this.possition.x
+            this.possition?.x
           )
         ) {
           this.possition.x = this.foodGrid[Math.floor(Math.random() * 20)];
@@ -80,16 +80,24 @@ function updateRotation(direction) {
   snake.lastRotation = snake.rotation;
 
   switch (direction) {
-    case "w" || "W":
+    case "w":
+    case "W":
+    case "ArrowUp":
       if (snake.lastRotation !== 180) snake.rotation = 0;
       break;
-    case "d" || "D":
+    case "d":
+    case "D":
+    case "ArrowRight":
       if (snake.lastRotation !== 270) snake.rotation = 90;
       break;
-    case "s" || "S":
+    case "s":
+    case "S":
+    case "ArrowDown":
       if (snake.lastRotation !== 0) snake.rotation = 180;
       break;
-    case "a" || "A":
+    case "a":
+    case "A":
+    case "ArrowLeft":
       if (snake.lastRotation !== 90) snake.rotation = 270;
       break;
     default:
